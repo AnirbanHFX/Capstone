@@ -1,23 +1,19 @@
 #include <LiquidCrystal.h>
 #define gas_Pin 7
+#define nsample 10
 #include <TinyGPS.h>
 
 TinyGPS gps;
 // initialize the library by associating any needed LCD interface pin
 // with the arduino pin number it is connected to
 const int rs = 13, en = 12, d4 = 11, d5 = 10, d6 = 9, d7 = 8;
+
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
-int gas_value;
-void setup() {
-    Serial.begin(9600);
-  // set up the LCD's number of columns and rows:
-  lcd.begin(16, 2);  
-  pinMode(6,OUTPUT);
-  pinMode(5,OUTPUT);
-}
+
+int xcal, ycal, zcal;
 
 void checkGas() {
-    gas_value = digitalRead(gas_Pin); 
+    int gas_value = digitalRead(gas_Pin); 
     if(gas_value==1) {
         digitalWrite(6,HIGH);
         digitalWrite(5,HIGH);
@@ -27,15 +23,13 @@ void checkGas() {
         while(gas_value == 1) { 
             gas_value = digitalRead(gas_Pin);
         }
-        lcd.clear();
-    }
-    else {
         digitalWrite(6,LOW);
+        digitalWrite(5,LOW);
+        lcd.clear();
     }
 }
 
-void loop()
-{
+void doGPSmagic() {
     bool newData = false;
     unsigned long chars;
     unsigned short sentences, failed;
@@ -49,7 +43,6 @@ void loop()
                 newData = true;  
         }
     }
-    
     if (newData) {     //If newData is true
         float flat, flon;
         unsigned long age;
@@ -61,9 +54,67 @@ void loop()
         Serial.print(" Longitude = ");
         Serial.print(flon == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flon, 6);
     }
-    
     Serial.println(failed);
+}
 
+void calibrateAccelerometer() {
+    lcd.setCursor(0, 0);
+    lcd.print("Calibrating");
+    lcd.display();
+    lcd.setCursor(0, 1);
+    xcal = 0;
+    ycal = 0;
+    zcal = 0;
+    for(int i=0; i<nsample; i++) {
+        lcd.print(".");
+        lcd.display();
+        xcal += analogRead(A0);
+        ycal += analogRead(A1);
+        zcal += analogRead(A2);
+        delay(200);
+    }
+    xcal /= nsample;
+    ycal /= nsample;
+    zcal /= nsample;
+    lcd.clear();
+    lcd.setCursor(0, 1);
+    lcd.print("Calibrated!");
+}
+
+void checkCrash() {
+    uint32_t xval, yval, zval, A;
+    xval = abs(analogRead(A0)-xcal);
+    yval = abs(analogRead(A1)-ycal);
+    zval = abs(analogRead(A2)-zcal);
+    A = (int) sqrt(xval*xval + yval*yval + zval*zval);
+    if (A >= 299) {
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Accident");
+        lcd.setCursor(0, 1);
+        lcd.print("Detected!");
+        lcd.display();
+        digitalWrite(6,HIGH);
+        digitalWrite(5,HIGH);
+        while(1) {}
+    }
+}
+
+void setup() {
+    Serial.begin(9600);    
+    lcd.begin(16, 2);  
+    lcd.clear();
+    pinMode(6,OUTPUT);
+    pinMode(5,OUTPUT);
+    pinMode(A0,INPUT);
+    pinMode(A1,INPUT);
+    pinMode(A2,INPUT);
+    calibrateAccelerometer();
+}
+
+
+void loop()
+{
     checkGas();
-
+    checkCrash();
 }
