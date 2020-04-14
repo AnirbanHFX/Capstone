@@ -96,12 +96,28 @@ void checkCrash() {
         lcd.display();
         digitalWrite(6,HIGH);
         digitalWrite(5,HIGH);
+        sendsms();
         while(1) {}
     }
 }
 
+void sendsms() {
+    Serial1.print("AT+CMGF=1\r"); 
+    delay(100);
+    Serial1.println("AT + CMGS = \"+918240305500\""); 
+    delay(100);
+    Serial1.println("Save Our Soul"); 
+    delay(100);
+    Serial1.println((char)26); 
+    delay(100);
+    Serial1.println();
+    delay(5000);
+}
+
 void setup() {
-    Serial.begin(9600);    
+    Serial.begin(9600);
+    Serial1.begin(19200);
+    delay(2000);
     lcd.begin(16, 2);  
     lcd.clear();
     pinMode(6,OUTPUT);
