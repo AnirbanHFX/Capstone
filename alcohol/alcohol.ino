@@ -29,32 +29,21 @@ void checkGas() {
     }
 }
 
-void doGPSmagic() {
+void doGPSmagic(float *flat, float *flon) {
     bool newData = false;
     unsigned long chars;
     unsigned short sentences, failed;
-    digitalWrite(5,LOW);
-    // For one second we parse GPS data and report some key values
     for (unsigned long start = millis(); millis() - start < 1000;) {
         while (Serial.available()) {
             char c = Serial.read();
-            //Serial.print(c);
             if (gps.encode(c)) 
                 newData = true;  
         }
     }
     if (newData) {     //If newData is true
-        float flat, flon;
         unsigned long age;
-        gps.f_get_position(&flat, &flon, &age);   
-        Serial.print("Latitude = ");
-        Serial.print(flat == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flat, 6);
-        if(flat==30.240455&& flon==-97.8177100)
-        digitalWrite(5,HIGH);
-        Serial.print(" Longitude = ");
-        Serial.print(flon == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flon, 6);
+        gps.f_get_position(flat, flon, &age);   
     }
-    Serial.println(failed);
 }
 
 void calibrateAccelerometer() {
@@ -102,11 +91,17 @@ void checkCrash() {
 }
 
 void sendsms() {
+    float flat, flon;
+    doGPSmagic(&flat, &flon);
     Serial1.print("AT+CMGF=1\r"); 
     delay(100);
     Serial1.println("AT + CMGS = \"+918240305500\""); 
     delay(100);
     Serial1.println("Save Our Soul"); 
+    Serial1.print("Latitude = ");
+    Serial1.print(flat == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flat, 6);
+    Serial1.print(" Longitude = ");
+    Serial1.print(flon == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flon, 6);
     delay(100);
     Serial1.println((char)26); 
     delay(100);
