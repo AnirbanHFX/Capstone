@@ -106,7 +106,7 @@ void sendsms() {
     Serial1.println((char)26); 
     delay(100);
     Serial1.println();
-    delay(5000);
+    delay(100);
 }
 
 void setup() {
@@ -128,7 +128,13 @@ void checkAccident()
   float flat,flon;
   doGPSmagic(&flat, &flon);
   if(flat==30.240455&& flon==-97.8177100)
-    digitalWrite(5,HIGH);
+    {digitalWrite(5,HIGH);
+    lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Accident");
+        lcd.setCursor(0, 1);
+        lcd.print("Prone zone!");
+        lcd.display();};
 }
 void panic()
 {
@@ -136,6 +142,14 @@ void panic()
   {
     float flat, flon;
     doGPSmagic(&flat, &flon);
+     lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Panic");
+        lcd.setCursor(0, 1);
+        lcd.print("Detected!");
+        lcd.display();
+        digitalWrite(6,HIGH);
+        digitalWrite(5,HIGH);
     Serial1.print("AT+CMGF=1\r"); 
     delay(100);
     Serial1.println("AT + CMGS = \"+918240305500\""); 
@@ -149,7 +163,7 @@ void panic()
     Serial1.println((char)26); 
     delay(100);
     Serial1.println();
-    delay(5000);
+    delay(100);
   }
   
 }
