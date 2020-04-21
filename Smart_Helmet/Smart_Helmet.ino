@@ -3,6 +3,8 @@
 #define nsample 10
 #include <TinyGPS.h>
 
+uint64_t parity = 0;
+
 TinyGPS gps;
 // initialize the library by associating any needed LCD interface pin
 // with the arduino pin number it is connected to
@@ -95,9 +97,9 @@ void sendsms() {
     doGPSmagic(&flat, &flon);
     Serial1.print("AT+CMGF=1\r"); 
     delay(100);
-    Serial1.println("AT + CMGS = \"+918240305500\""); 
+    Serial1.println("AT + CMGS = \"+917003554703\""); 
     delay(100);
-    Serial1.println("Save Our Soul"); 
+    Serial1.println("Accident!!Save Our Soul"); 
     Serial1.print("Latitude = ");
     Serial1.print(flat == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flat, 6);
     Serial1.print(" Longitude = ");
@@ -106,26 +108,77 @@ void sendsms() {
     Serial1.println((char)26); 
     delay(100);
     Serial1.println();
-    delay(5000);
+    delay(100);
 }
 
 void setup() {
     Serial.begin(9600);
-    Serial1.begin(19200);
-    delay(2000);
+    Serial1.begin(9600);
     lcd.begin(16, 2);  
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("Booting");
+    lcd.setCursor(0,1);
+    lcd.print("Systems");
+    lcd.display();
+    delay(2000);
     lcd.clear();
     pinMode(6,OUTPUT);
     pinMode(5,OUTPUT);
     pinMode(A0,INPUT);
     pinMode(A1,INPUT);
     pinMode(A2,INPUT);
+    pinMode(4,INPUT);
     calibrateAccelerometer();
 }
-
-
+void checkAccident()
+{
+  float flat,flon;
+  doGPSmagic(&flat, &flon);
+  if(flat==30.240455&& flon==-97.8177100)
+    {digitalWrite(5,HIGH);
+    lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Accident");
+        lcd.setCursor(0, 1);
+        lcd.print("Prone zone!");
+        lcd.display();};
+}
+void panic()
+{
+  if(digitalRead(4)==HIGH)
+  {
+    float flat, flon;
+    doGPSmagic(&flat, &flon);
+     lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Panic");
+        lcd.setCursor(0, 1);
+        lcd.print("Detected!");
+        lcd.display();
+        digitalWrite(6,HIGH);
+        digitalWrite(5,HIGH);
+    Serial1.print("AT+CMGF=1\r"); 
+    delay(100);
+    Serial1.println("AT + CMGS = \"+917003554703\""); 
+    delay(100);
+    Serial1.println("I need help!!!"); 
+    Serial1.print("Latitude = ");
+    Serial1.print(flat == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flat, 6);
+    Serial1.print(" Longitude = ");
+    Serial1.print(flon == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flon, 6);
+    delay(100);
+    Serial1.println((char)26); 
+    delay(100);
+    Serial1.println();
+    delay(100);
+  }
+  
+}
 void loop()
 {
     checkGas();
     checkCrash();
+    panic();
+    digitalWrite(5,LOW);
 }
